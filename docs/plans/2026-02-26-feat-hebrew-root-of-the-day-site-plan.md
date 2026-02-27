@@ -118,16 +118,16 @@ Set up the project, build the content generation pipeline, and create the admin 
 
 **Tasks:**
 
-- [ ] Initialize Next.js project with TypeScript and App Router — `npx create-next-app@latest --typescript --app`
-- [ ] Configure Tailwind CSS with RTL support
-- [ ] Add `.gitignore` with `.env.local`, `.env`, `.env*.local` (CRITICAL — must be in the very first commit)
-- [ ] Set up environment variables (never use `NEXT_PUBLIC_` prefix for secrets):
+- [x] Initialize Next.js project with TypeScript and App Router — `npx create-next-app@latest --typescript --app`
+- [x] Configure Tailwind CSS with RTL support
+- [x] Add `.gitignore` with `.env.local`, `.env`, `.env*.local` (CRITICAL — must be in the very first commit)
+- [x] Set up environment variables (never use `NEXT_PUBLIC_` prefix for secrets):
   - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
   - `UPSTASH_REDIS_READ_TOKEN` (read-only token for public pages)
   - `ANTHROPIC_API_KEY`
   - `ADMIN_PASSWORD` (32+ char random string)
   - `CLAUDE_MODEL` (default: `claude-sonnet-4-5`)
-- [ ] Add build-time secret guard in `next.config.ts`:
+- [x] Add build-time secret guard in `next.config.ts`:
 
 ```typescript
 // next.config.ts
@@ -136,7 +136,7 @@ if (process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_UPSTASH
 }
 ```
 
-- [ ] Create `lib/redis.ts` — two Upstash Redis clients:
+- [x] Create `lib/redis.ts` — two Upstash Redis clients:
 
 ```typescript
 import { Redis } from '@upstash/redis';
@@ -154,11 +154,11 @@ export const redisAdmin = new Redis({
 });
 ```
 
-- [ ] Create `lib/sefaria.ts` — Sefaria API client with three functions:
+- [x] Create `lib/sefaria.ts` — Sefaria API client with three functions:
   - `getCurrentParsha()` — calls `GET https://www.sefaria.org/api/calendars`, filters for `title.en === "Parashat Hashavua"`, returns parsha name, Hebrew name, ref, and URL. Also add a `diaspora` param (default `1`).
   - `fetchParshaText(ref: string)` — calls `GET https://www.sefaria.org/api/v3/texts/{ref}?version=hebrew|Tanach with Ta'amei Hamikra`, returns verse array
   - No `@hebcal/core` dependency needed — Sefaria's `/api/calendars` does the same thing with no npm dependency and no 174KB bundle risk
-- [ ] Create `types/sefaria.ts` — TypeScript types for Sefaria API responses:
+- [x] Create `types/sefaria.ts` — TypeScript types for Sefaria API responses:
 
 ```typescript
 export type SefariaCalendarItem = {
@@ -189,7 +189,7 @@ export type SefariaTextResponse = {
 };
 ```
 
-- [ ] Create `lib/hebrew-utils.ts` — utility functions with pre-compiled regexes:
+- [x] Create `lib/hebrew-utils.ts` — utility functions with pre-compiled regexes:
 
 ```typescript
 const CANTILLATION_RE = /[\u0591-\u05AF]/g;
@@ -217,7 +217,7 @@ export function slugifyParsha(name: string): string {
 }
 ```
 
-- [ ] Create Zod schemas in `lib/schemas.ts` (source of truth — TypeScript types derived via `z.infer<>`):
+- [x] Create Zod schemas in `lib/schemas.ts` (source of truth — TypeScript types derived via `z.infer<>`):
 
 ```typescript
 import { z } from 'zod';
@@ -270,7 +270,7 @@ export type PracticeProblem = z.infer<typeof PracticeProblemSchema>;
 export type WeeklyContent = z.infer<typeof WeeklyContentSchema>;
 ```
 
-- [ ] Create `lib/anthropic.ts` — singleton Claude client:
+- [x] Create `lib/anthropic.ts` — singleton Claude client:
 
 ```typescript
 import Anthropic from '@anthropic-ai/sdk';
@@ -285,14 +285,14 @@ export function getAnthropicClient(): Anthropic {
 }
 ```
 
-- [ ] Create `lib/generate.ts` — content generation using structured outputs:
+- [x] Create `lib/generate.ts` — content generation using structured outputs:
   - Uses `client.messages.parse()` with `zodOutputFormat(WeeklyRootsSchema)`
   - Fetches Torah text via Sefaria, strips cantillation (keeps nikud), strips HTML
   - Truncates to first 50 verses to stay within reasonable input size and avoid timeout
   - Post-generation: validates nikud presence with `hasNikud()` on all Hebrew fields
   - If nikud validation fails, attempts a correction pass before falling back to draft with warnings
 
-- [ ] Create `lib/auth.ts` — timing-safe admin authentication:
+- [x] Create `lib/auth.ts` — timing-safe admin authentication:
 
 ```typescript
 import { timingSafeEqual } from 'crypto';
@@ -310,25 +310,25 @@ export function isAuthorized(request: Request): boolean {
 }
 ```
 
-- [ ] Create `lib/content-store.ts` — Redis CRUD for weekly content:
+- [x] Create `lib/content-store.ts` — Redis CRUD for weekly content:
   - `storeWeeklyContent(content: WeeklyContent)` — stores as `content:{slugifiedParshaName}:{weekOf}` with status "draft". Also adds the key to a Redis Set `index:drafts`.
   - `approveContent(parshaSlug: string, weekOf: string)` — sets status to "approved", removes from `index:drafts` set, calls `revalidatePath('/')`.
   - `getApprovedContent(weekOf: string)` — single Redis read returns full `WeeklyContent`. The page component determines which root to display based on day of week (business logic stays out of the data layer).
   - `getDraftContent()` — reads the `index:drafts` set, then fetches each draft. Avoids expensive `SCAN` operations.
 
-- [ ] Create all admin API routes under `/api/admin/`:
+- [x] Create all admin API routes under `/api/admin/`:
   - `app/api/admin/generate/route.ts` — POST, triggers generation. Uses Redis lock (`generating:{parshaSlug}`) to prevent concurrent generation.
   - `app/api/admin/content/route.ts` — GET drafts
   - `app/api/admin/approve/route.ts` — POST, approves content, calls `revalidatePath('/')`
 
-- [ ] Apply admin auth via Next.js middleware on `/api/admin/*` and `/admin/*` routes
+- [x] Apply admin auth via Next.js middleware on `/api/admin/*` and `/admin/*` routes
 
-- [ ] Create `app/admin/page.tsx` — Server Component listing draft content (read-only display)
-- [ ] Create `app/admin/ReviewForm.tsx` — Client Component with view + approve/regenerate buttons (no inline edit UI — if content needs fixing, regenerate or use Upstash console)
+- [x] Create `app/admin/page.tsx` — Server Component listing draft content (read-only display)
+- [x] Create `app/admin/ReviewForm.tsx` — Client Component with view + approve/regenerate buttons (no inline edit UI — if content needs fixing, regenerate or use Upstash console)
 
-- [ ] Add CORS middleware restricting API routes to the site's own origin
+- [x] Add CORS middleware restricting API routes to the site's own origin
 
-- [ ] Configure `maxDuration = 60` on the generation endpoint (Vercel Pro) or implement async generation for Hobby plan
+- [x] Configure `maxDuration = 60` on the generation endpoint (Vercel Pro) or implement async generation for Hobby plan
 
 **Claude API prompt (expanded for nikud quality):**
 
@@ -400,24 +400,24 @@ Build the daily root display and practice quiz UI.
 
 **Tasks:**
 
-- [ ] Create `app/page.tsx` — home page (Server Component):
+- [x] Create `app/page.tsx` — home page (Server Component):
   - Fetches full `WeeklyContent` from Redis via `redisRead` (single read)
   - Computes which root to show: `dayOfWeek === 6 ? 'all' : dayIndex` (US Eastern timezone, documented)
   - On weekdays: displays 1 root card + practice quiz
   - On Saturday: displays all 5 roots in review mode
   - If no content available: shows a static fallback root (hardcoded sample) so the site always shows something educational
-- [ ] Use on-demand revalidation with a 24-hour safety net:
+- [x] Use on-demand revalidation with a 24-hour safety net:
 
 ```typescript
 export const revalidate = 86400; // 24-hour safety net; actual revalidation triggered by /api/admin/approve
 ```
 
-- [ ] Create `app/components/ShoreshCard.tsx` — Server Component displaying:
+- [x] Create `app/components/ShoreshCard.tsx` — Server Component displaying:
   - Root letters (large, RTL, `dir="rtl" lang="he"`)
   - Definition in English
   - Example words with nikud in a clean list (derive plain form via `stripNikud(word)` at render time)
   - Source verse reference
-- [ ] Create `app/components/PracticeQuiz.tsx` — Client Component (`'use client'`):
+- [x] Create `app/components/PracticeQuiz.tsx` — Client Component (`'use client'`):
   - **State machine with ref-based click gate** to prevent double-counting:
 
 ```typescript
@@ -438,14 +438,14 @@ function handleAnswer(selectedRoot: string) {
   - Green/red feedback on selection
   - Final score display after all problems
   - Cleanup: `useEffect` return clears any pending feedback timeouts
-- [ ] Create `app/components/ShabbatReview.tsx` — Server Component:
+- [x] Create `app/components/ShabbatReview.tsx` — Server Component:
   - Displays all 5 roots from the week in a summary grid
   - Use `content-visibility: auto` on each card for rendering performance
-- [ ] Create `app/components/ParshaHeader.tsx` — Server Component:
+- [x] Create `app/components/ParshaHeader.tsx` — Server Component:
   - Shows current parsha name (Hebrew + English) and week date range
   - Day indicator (Day 1-5, or Shabbat)
   - Timezone note: "Content follows US Eastern time"
-- [ ] Add Hebrew web font in `globals.css`:
+- [x] Add Hebrew web font in `globals.css`:
 
 ```css
 @font-face {
@@ -456,9 +456,9 @@ function handleAnswer(selectedRoot: string) {
 }
 ```
 
-- [ ] Style all components with Tailwind, ensuring proper RTL handling
-- [ ] Add `<Suspense>` boundaries around data-fetching Server Components with skeleton loaders
-- [ ] Never use `dangerouslySetInnerHTML` for any content (project rule — document in CLAUDE.md)
+- [x] Style all components with Tailwind, ensuring proper RTL handling
+- [x] Add `<Suspense>` boundaries around data-fetching Server Components with skeleton loaders
+- [x] Never use `dangerouslySetInnerHTML` for any content (project rule — document in CLAUDE.md)
 
 **Success criteria:** Users can visit the site, see today's root with definition and examples, complete practice problems with immediate feedback, and see the week's review on Saturday.
 
@@ -484,7 +484,7 @@ Build the cantillation audio synthesis and matching quiz.
 
 **Tasks:**
 
-- [ ] Create `types/trope.ts` — typed trope data structures:
+- [x] Create `types/trope.ts` — typed trope data structures:
 
 ```typescript
 export type TropeInterval = readonly [semitones: number, durationMultiplier: number];
@@ -498,13 +498,13 @@ export type TropeMark = {
 };
 ```
 
-- [ ] Create `lib/audio/trope-data.ts` — define trope motif data:
+- [x] Create `lib/audio/trope-data.ts` — define trope motif data:
   - Start with 8 most common marks: Sof Pasuk, Etnachta, Tipcha, Merkha, Munach, Zakef Katan, Pashta, Revia
   - Each motif as `TropeMark` with interval arrays transcribed from Ashkenazi references
   - Best sources for transcription:
     - [Chabad.org Torah Reading Trop recordings](https://www.chabad.org/multimedia/music_cdo/aid/931078/jewish/Torah-Reading-Trop.htm)
     - [Temple Israel of Natick Torah Trope Music Notation PDF](https://www.tiofnatick.org/wp-content/uploads/2020/05/Torah-Trope-Music-Notation.pdf)
-- [ ] Create `lib/audio/trope-player.ts` — Web Audio API synthesis with proper lifecycle:
+- [x] Create `lib/audio/trope-player.ts` — Web Audio API synthesis with proper lifecycle:
 
 ```typescript
 let audioCtx: AudioContext | null = null;
@@ -565,17 +565,17 @@ export function suspendContext() {
 }
 ```
 
-- [ ] Create `app/trope/page.tsx` — trope practice page (Server Component):
+- [x] Create `app/trope/page.tsx` — trope practice page (Server Component):
   - Passes full `tropeMotifs` array to client component
   - Quiz randomization happens CLIENT-SIDE (not server-side) to avoid ISR caching the same quiz order
-- [ ] Create `app/trope/TropeQuiz.tsx` — Client Component loaded with `dynamic(() => import(...), { ssr: false, loading: () => <TropeSkeleton /> })`:
+- [x] Create `app/trope/TropeQuiz.tsx` — Client Component loaded with `dynamic(() => import(...), { ssr: false, loading: () => <TropeSkeleton /> })`:
   - `useMemo(() => generateQuestions(motifs), [motifs])` for client-side randomization
   - "Listen" button plays the target motif (goes through `playTrope` gate — always cancels prior playback)
   - 4 option buttons with cantillation mark name + Unicode symbol
   - Feedback: correct/incorrect, play the correct one if wrong (also goes through `playTrope` gate)
   - Score tracking across 10 questions
   - `useEffect` cleanup: call `stopAll()` and clear timeouts on unmount
-- [ ] Create `app/trope/TropeReference.tsx` — reference page listing all available trope marks with play buttons
+- [x] Create `app/trope/TropeReference.tsx` — reference page listing all available trope marks with play buttons
 
 **Success criteria:** Users can listen to a synthesized trope melody, select the matching cantillation mark from 4 options, get immediate feedback, and track their score across a practice session.
 
@@ -599,21 +599,21 @@ app/trope/
 
 **Tasks:**
 
-- [ ] Add navigation between shoresh and trope sections (simple top nav)
-- [ ] Add meta tags and OpenGraph for sharing (parsha name in title, Hebrew text preview)
+- [x] Add navigation between shoresh and trope sections (simple top nav)
+- [x] Add meta tags and OpenGraph for sharing (parsha name in title, Hebrew text preview)
 - [ ] Add error boundaries for API failures
 - [ ] Handle double parshas (e.g., Vayakhel-Pekudei): use combined slugified key `content:vayakhel-pekudei:{weekOf}`, generate 5 roots from the combined text
-- [ ] For holiday weeks with no regular parsha: show fallback message (sufficient for v1)
-- [ ] Use diaspora parsha schedule (hardcoded, no toggle needed for v1)
-- [ ] Add security headers via `next.config.ts`: `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`
+- [x] For holiday weeks with no regular parsha: show fallback message (sufficient for v1)
+- [x] Use diaspora parsha schedule (hardcoded, no toggle needed for v1)
+- [x] Add security headers via `next.config.ts`: `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`
 - [ ] Deploy to Vercel:
   - Connect GitHub repo
   - Set all environment variables (including read-only Redis token)
   - Provision Upstash Redis via Vercel Marketplace, create read-only token
 - [ ] Add `@next/bundle-analyzer` to catch bundle size regressions
 - [ ] Test end-to-end: generate content, review, approve, verify live display + ISR revalidation
-- [ ] Write CLAUDE.md with project conventions (include: never use `dangerouslySetInnerHTML`, never use `NEXT_PUBLIC_` for secrets, always validate Redis data with Zod)
-- [ ] Add `/api/health` endpoint that checks Redis connectivity
+- [x] Write CLAUDE.md with project conventions (include: never use `dangerouslySetInnerHTML`, never use `NEXT_PUBLIC_` for secrets, always validate Redis data with Zod)
+- [x] Add `/api/health` endpoint that checks Redis connectivity
 
 **Success criteria:** Site is live on Vercel, accessible publicly, with at least one week of approved content. Admin can generate and review content for upcoming weeks.
 

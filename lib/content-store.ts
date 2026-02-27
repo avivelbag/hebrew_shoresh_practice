@@ -1,7 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redisAdmin, redisRead } from "./redis";
 import { WeeklyContentSchema, type WeeklyContent } from "./schemas";
-import { slugifyParsha } from "./hebrew-utils";
 import { getRedisKey } from "./generate";
 
 const DRAFTS_INDEX = "index:drafts";
